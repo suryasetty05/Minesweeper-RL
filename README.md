@@ -1,0 +1,1 @@
+This is a reinforcement learning project on the game "Minesweeper" by Jason Liu and Surya Setty. The environment is based off a gym-environment through pip install gym-minesweeper with minor changes for compatability with the latest version of gymnasium (1.2). 
