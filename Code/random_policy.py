@@ -1,12 +1,10 @@
 from env_setup import create_small_env
-from gymnasium.utils.step_api_compatibility import convert_to_terminated_truncated_step_api
 
-num_episodes = 10
+num_episodes = 1
 
 for ep in range(num_episodes):
     env = create_small_env()
-    obs = env.reset()
-    info = {}
+    obs, info = env.reset()
     done = False
     total_reward = 0
     steps = 0
@@ -17,4 +15,8 @@ for ep in range(num_episodes):
         total_reward += reward
         steps += 1
         done = terminated or truncated
-    print(f"Episode {ep+1}: Total Reward = {total_reward}, Steps = {steps}")
+        print(f"obs {obs} \n, Action={action}, Reward={reward} \n")
+    print(f"Episode {ep+1}, Total Reward = {total_reward}, Steps = {steps}")
+    print(f"final_state: {env.unwrapped.state}")
+    # print(f"bombs: {info['map']}")
+
