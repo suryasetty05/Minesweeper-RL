@@ -1,6 +1,9 @@
 import gymnasium as gym
 import gym_minesweeper
 from gymnasium.utils.step_api_compatibility import convert_to_terminated_truncated_step_api
+import math
+import numpy as np
+import random
 
 def create_minesweeper_env(height, width, num_mines):
     env = (gym.make("Minesweeper-v0",
@@ -10,9 +13,21 @@ def create_minesweeper_env(height, width, num_mines):
                     ))
     return env
 
-def create_small_env():
-    return create_minesweeper_env(5, 5, 5)
-def create_beginner_env():
-    return create_minesweeper_env(9, 9, 10)
-def create_intermediate_env():  
-    return create_minesweeper_env(16, 16, 40)
+if __name__ == '__main__':
+    env = create_minesweeper_env(8, 8, 10)
+    obs = env.reset()
+    info = {}
+    done = False
+    total_reward = 0
+    steps = 0
+
+    action = [1, 1]
+    obs, reward, terminated, truncated, info = env.step(action)
+    total_reward += reward
+    steps += 1
+
+    if terminated:
+        print('BOOM')
+    print(f"Total Reward = {total_reward}, Steps = {steps}")
+    env.render()
+    input("enter to exit")
