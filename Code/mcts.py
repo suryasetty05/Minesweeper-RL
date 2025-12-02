@@ -55,7 +55,7 @@ def expand(node):
     
     return random.choice(list(node.children.values()))
 
-def simulate(node):
+def simulate_random(node):
     env = copy.deepcopy(node.env)
     done = False
     total_reward = 0
@@ -64,6 +64,53 @@ def simulate(node):
     while not done:
         random_action = random.choice(get_actions(board))
         board, reward, terminated, truncated, info = env.step(random_action)
+        total_reward += reward
+        done = terminated or truncated
+    
+    return total_reward
+
+def simulate_logic(node):
+    def get_score(board, i, j):
+        m = 0
+        for x in range(i - 1, i + 2):
+            for y in range(j - 1, j + 2):
+                if 0 <= x < board.shape[0] and 0 <= y < board.shape[1] and (x, y) != (i, j) and board[x][y] == -1:
+                    m += 1
+        return m
+
+    def calculate_prob(cell_values, i, j):
+        p = 1
+        for x in range(i - 1, i + 2):
+            for y in range(j - 1, j + 2):
+                if (x, y) in cell_values:
+                    p = p * (1 - cell_values[(x, y)])
+        return 1 - p
+
+    def single_step(board):
+        cell_values = {}
+
+        for i, row in enumerate(board):
+            for j, cell in enumerate(row):
+                if cell > 0:
+                    cell_values[(i, j)] = cell / get_score(board, i, j)
+
+        action_list = []
+        for action in get_actions(board):
+            action_list.append((action, calculate_prob(cell_values, action[0], action[1])))
+
+        action_list = sorted(action_list, key = lambda x: x[1])
+        return action_list[0]
+
+    env = copy.deepcopy(node.env)
+    done = False
+    total_reward = 0
+
+    board = node.board
+    while not done:
+        action = single_step(board)[0]
+        board, reward, terminated, truncated, info = env.step(action)
+        if reward == -10:
+            total_reward += -40
         total_reward += reward
         done = terminated or truncated
     
@@ -105,11 +152,11 @@ def run_mcts(env, n_iterations = 10):
     for i in range(n_iterations):
         path = select(initial)
         child = expand(path)
-        reward = simulate(child)
+        reward = simulate_logic(child)
         backpropagate(child, reward)
 
     test_node = initial
-    best_moves = []
+    best_moves = [initial_action]
 
     while test_node.children:
         next_node = max(test_node.children.items(), key=lambda x: x[1].visits)
@@ -124,7 +171,7 @@ def run_mcts(env, n_iterations = 10):
     return (True, best_moves)
 
 if __name__ == '__main__':
-    env = create_minesweeper_env(8, 8, 10)
+    env = create_minesweeper_env(10, 10, 8)
     run = run_mcts(env, 10000)
 
     for move in run[1]:
@@ -141,7 +188,7 @@ if __name__ == '__main__':
 
 #     while not success[0]:
 #         tries = tries + 1
-#         env = create_minesweeper_env(8, 8, 10)
+#         env = create_minesweeper_env(5, 5, 5)
 #         success = run_mcts(env, 1000)
         
 #     print(f'Tries: {tries}')
