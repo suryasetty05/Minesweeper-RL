@@ -9,10 +9,11 @@ import random
 warnings.filterwarnings("ignore", category = UserWarning)
 
 class Node:
-    def __init__(self, env, board, parent = None):
+    def __init__(self, env, board, parent = None, action = None):
         self.env = env
         self.board = board
         self.parent = parent
+        self.action = action
         
         self.children = {}
         self.rewards = 0
@@ -35,15 +36,13 @@ def score(node, c):
 
 def select(node):
     while node.children:
+        not_visited = [c for c in node.children.values() if c.visits == 0]
+        if not_visited:
+            return node
         children = node.children
         node = max(children.values(), key = lambda x: score(x, np.sqrt(2)))
     
     return node
-
-def best_path(root):
-    node = root
-    while node.children:
-       node = max(node.children.items(), key=lambda x: score(x[1], np.sqrt(2)))[1]
 
 def expand(node):
     for action in get_actions(node.board):
@@ -51,9 +50,8 @@ def expand(node):
             child_env = copy.deepcopy(node.env)
             board, reward, terminated, truncated, info = child_env.step(action)
 
-            child = Node(env = child_env, board = board, parent = node)
+            child = Node(env = child_env, board = board, parent = node, action = action)
             node.children[action] = child
-            return child
     
     return random.choice(list(node.children.values()))
 
@@ -104,23 +102,53 @@ def run_mcts(env, n_iterations = 10):
 
     initial = Node(env, board)
     
-    current_node = initial
     for i in range(n_iterations):
-        expand(current_node)
-        child = select(current_node)
+        path = select(initial)
+        child = expand(path)
         reward = simulate(child)
         backpropagate(child, reward)
 
-    moves = [key for key in initial.children]
-    for move in moves:
-        env.step(move)
-    env.render()
-    # best_path(initial)
+    test_node = initial
+    best_moves = []
 
+    while test_node.children:
+        next_node = max(test_node.children.items(), key=lambda x: x[1].visits)
+        best_moves.append(next_node[0])
+        test_node = next_node[1]
+
+    for move in best_moves:
+        board, reward, terminated, truncated, info = env.step(move)
+        if reward == -10:
+            return (False, best_moves)
+        
+    return (True, best_moves)
 
 if __name__ == '__main__':
     env = create_minesweeper_env(8, 8, 10)
+    run = run_mcts(env, 10000)
 
-    run_mcts(env, 100)
+    for move in run[1]:
+        board, reward, terminated, truncated, info = env.step(move)
+        print(f'{move}: {reward}')
+
+    env.render()
 
     input("enter to exit")
+
+# if __name__ == '__main__':
+#     success = (False, [])
+#     tries = 0
+
+#     while not success[0]:
+#         tries = tries + 1
+#         env = create_minesweeper_env(8, 8, 10)
+#         success = run_mcts(env, 1000)
+        
+#     print(f'Tries: {tries}')
+#     for move in success[1]:
+#         board, reward, terminated, truncated, info = env.step(move)
+#         print(f'{move}: {reward}')
+    
+#     env.render()
+
+#     input("enter to exit")
