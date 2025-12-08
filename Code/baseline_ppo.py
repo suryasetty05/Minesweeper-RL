@@ -1,9 +1,8 @@
-import torch
-import torch.nn as nn
-import numpy as np
-import gymnasium as gym
 from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback, ProgressBarCallback
 from stable_baselines3.common.env_util import make_vec_env
+import gymnasium as gym
 from FlatteningWrapper import FlattenObservationWrapper
 import env_setup
 
@@ -19,18 +18,12 @@ def make_minesweeper_env():
 sb3_env = make_vec_env(lambda: make_minesweeper_env(), n_envs = 1)
 model = PPO('MlpPolicy', sb3_env, verbose = 1)
 
-# Load dagger policy
-policy_path = 'minesweeper_dagger_policy_new2.pth'
-policy = model.policy
-state_dict = torch.load(policy_path)
-policy.load_state_dict(state_dict, strict = False)
-
 # Training
-timesteps = 500000
-print(f'Starting PPO for {timesteps} timesteps...')
-model.learn(total_timesteps = timesteps)
+total_timesteps = 500000
+print(f'Starting PPO training for {total_timesteps} timesteps...')
+model.learn(total_timesteps = total_timesteps)
 
-# Save model
-model_save_name = 'ppo_minesweeper_trained_new'
+# Save Model
+model_save_name = 'ppo_intermediate_500k'
 model.save(model_save_name)
-print(f'Full DAgger + PPO model saved as {model_save_name}.zip')
+print(f'PPO training complete for baseline model, saved to {model_save_name}.zip')
